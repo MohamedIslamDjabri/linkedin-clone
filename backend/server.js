@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import path from "path";
+
 
 import authRoutes from "./routes/auth.route.js";
 import userRoutes from "./routes/user.route.js";
@@ -16,12 +16,12 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const __dirname = path.resolve();
+
 
 if (process.env.NODE_ENV !== "production") {
 	app.use(
 		cors({
-			origin: "http://localhost:5173",
+			origin: process.env.CLIENT_URL,
 			credentials: true,
 		})
 	);
@@ -36,15 +36,21 @@ app.use("/api/v1/posts", postRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/connections", connectionRoutes);
 
-if (process.env.NODE_ENV === "production") {
-	app.use(express.static(path.join(__dirname, "/frontend/dist")));
 
-	app.get("*", (req, res) => {
-		res.sendFile(path.resolve(__dirname, "frontend", "dist", "index.html"));
-	});
-}
+const startServer = async () => {
+  try {
+    await connectDB();
+    if (process.env.NODE_ENV !== "production") {
+      app.listen(PORT, () => {
+        console.log("Server started on port:", PORT);
+      });
+    }
+  } catch (error) {
+    console.error("Error starting server:", error);
+    process.exit(1); // Exit the process with a failure code
+  }
+};
 
-app.listen(PORT, () => {
-	console.log(`Server running on port ${PORT}`);
-	connectDB();
-});
+startServer();
+
+export default app;
